@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1200">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="I'm a passionate graphic designer with 3+ years of experience, specializing in eye-catching YouTube thumbnails that drive results. I've worked with 300+ clients, helping their content stand out. Let’s collaborate!">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Killer Gfx">
@@ -46,14 +46,53 @@
         </div>
       </div>
       <a class="btn-pink nav-cta" href="contact.html">Contact me</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
+        <span class="nav-toggle-icon" aria-hidden="true"><i></i><i></i></span>
+      </button>
     </div>
   </nav>
 
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true" inert data-lenis-prevent>
+    <div class="mobile-menu-inner">
+      <p class="mobile-menu-kicker">Explore</p>
+      <nav class="mobile-menu-links" aria-label="Mobile navigation">
+        <a href="#home"><span>Home</span><span aria-hidden="true">01</span></a>
+        <a href="#portfolio"><span>Works</span><span aria-hidden="true">02</span></a>
+        <a href="#about"><span>About me</span><span aria-hidden="true">03</span></a>
+        <a href="#result-analytics"><span>Analytics</span><span aria-hidden="true">04</span></a>
+        <a href="#testimonials"><span>Reviews</span><span aria-hidden="true">05</span></a>
+        <a href="#faq"><span>FAQ</span><span aria-hidden="true">06</span></a>
+      </nav>
+      <div class="mobile-menu-foot">
+        <p>Have a thumbnail in mind?</p>
+        <a class="btn-pink mobile-menu-cta" href="contact.html">Let’s talk</a>
+        <a class="mobile-menu-mail" href="mailto:sameerkumar04300@gmail.com">sameerkumar04300@gmail.com</a>
+      </div>
+    </div>
+  </div>
+
   <main class="page">
     <header class="hero" id="home">
-      <h1 class="hero-title">Creating for creators</h1>
+      <div class="hero-mobile-badge"><span aria-hidden="true"></span> Open for new projects</div>
+      <h1 class="hero-title"><span>Creating for</span> <span class="hero-title-last">creators</span></h1>
       <p class="hero-sub">Specialize in designing thumbnails that <br>helps creators to stand out and grow.</p>
+      <div class="hero-mobile-proof" aria-label="Trusted by more than 300 creators">
+        <div class="hero-avatars" aria-hidden="true">
+          <img src="assets/img/avatar-1.jpg" width="36" height="36" alt="">
+          <img src="assets/img/avatar-2.jpg" width="36" height="36" alt="">
+          <img src="assets/img/avatar-3.jpg" width="36" height="36" alt="">
+        </div>
+        <p><strong>300+</strong> creators helped</p>
+      </div>
       <a class="btn-pink hero-cta" href="contact.html">Contact me</a>
+    </header>
+
+    <header class="portfolio-mobile-head">
+      <div>
+        <p class="eyebrow">Selected work</p>
+        <h2>Thumbnails that stop the scroll</h2>
+      </div>
+      <p class="portfolio-mobile-meta">30+ recent designs</p>
     </header>
 
     <section class="portfolio" id="portfolio" aria-label="Selected thumbnail work">
@@ -201,6 +240,7 @@
         <h2>Client Reveiws</h2>
         <p>Discover what my clients say about their experience on working with me.</p>
       </div>
+      <p class="testi-swipe" aria-hidden="true">Swipe to explore <span>→</span></p>
     </section>
 
     <div class="testi-ticker" aria-label="Client testimonials">

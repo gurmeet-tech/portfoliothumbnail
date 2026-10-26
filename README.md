@@ -9,6 +9,12 @@ A static recreation of [killergfx.framer.website](https://killergfx.framer.websi
 - `index.html` — home page with portfolio tickers, results, reviews and FAQ
 - `contact.html` — contact page with the enquiry form
 
+## Responsive behaviour
+
+- The original fixed-width composition is preserved at 1200px and above.
+- Below 1200px the site switches to a touch-first layout: a dedicated slide-down menu, a full-screen stacked hero, edge-to-edge thumbnail rows, single-column content cards, and swipeable testimonials.
+- Safe-area insets are respected on notched phones, and reduced-motion preferences disable the marquee and ticker animations.
+
 ## Local preview
 
 Serve the project root over HTTP rather than opening the HTML files directly:

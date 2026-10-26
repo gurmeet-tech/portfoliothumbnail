@@ -7,12 +7,13 @@
 
   const root = document.documentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let lenis = null;
 
   /* ------------------------------------------------------------------------
      Smooth scrolling (Lenis)
      ------------------------------------------------------------------------ */
   if (!reducedMotion && typeof window.Lenis === "function") {
-    const lenis = new window.Lenis({
+    lenis = new window.Lenis({
       duration: 1.2,
       easing: function (t) {
         return Math.min(1, 1.001 - Math.pow(2, -10 * t));
@@ -65,6 +66,124 @@
   }
 
   /* ------------------------------------------------------------------------
+     Mobile navigation
+     ------------------------------------------------------------------------ */
+  const nav = document.querySelector(".nav");
+  const navToggle = document.querySelector(".nav-toggle");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  if (nav && navToggle && mobileMenu) {
+    let menuOpen = false;
+
+    function setMenu(open, restoreFocus) {
+      if (menuOpen === open) return;
+      menuOpen = open;
+
+      nav.classList.toggle("is-open", open);
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      navToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      mobileMenu.setAttribute("aria-hidden", open ? "false" : "true");
+      mobileMenu.inert = !open;
+      document.body.classList.toggle("menu-open", open);
+
+      if (open) {
+        if (lenis) {
+          lenis.stop();
+        } else {
+          document.documentElement.style.overflow = "hidden";
+        }
+
+        window.setTimeout(function () {
+          if (!menuOpen) return;
+          const firstLink = mobileMenu.querySelector("a");
+          if (firstLink) firstLink.focus({ preventScroll: true });
+        }, 80);
+      } else {
+        if (lenis) {
+          lenis.start();
+        } else {
+          document.documentElement.style.overflow = "";
+        }
+
+        if (restoreFocus !== false) {
+          navToggle.focus({ preventScroll: true });
+        }
+      }
+    }
+
+    navToggle.addEventListener("click", function () {
+      setMenu(!menuOpen);
+    });
+
+    mobileMenu.addEventListener("click", function (event) {
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest("a");
+      if (!link) return;
+
+      const href = link.getAttribute("href");
+      setMenu(false, false);
+
+      // The clicked link disappears with the panel, so move focus to the
+      // destination for keyboard and screen-reader users.
+      if (href && href.charAt(0) === "#" && href.length > 1) {
+        const target = document.getElementById(decodeURIComponent(href.slice(1)));
+
+        if (target) {
+          window.setTimeout(function () {
+            if (!target.hasAttribute("tabindex")) {
+              target.setAttribute("tabindex", "-1");
+            }
+            target.setAttribute("data-menu-focus", "");
+            target.focus({ preventScroll: true });
+          }, 80);
+        }
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (!menuOpen) return;
+
+      if (event.key === "Escape") {
+        setMenu(false);
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const focusables = mobileMenu.querySelectorAll(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (!focusables.length) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (!mobileMenu.contains(document.activeElement)) {
+          event.preventDefault();
+          first.focus({ preventScroll: true });
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus({ preventScroll: true });
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus({ preventScroll: true });
+        }
+      }
+    });
+
+    const desktopNav = window.matchMedia("(min-width: 1200px)");
+    const closeOnDesktop = function (event) {
+      if (event.matches) setMenu(false, false);
+    };
+
+    if (desktopNav.addEventListener) {
+      desktopNav.addEventListener("change", closeOnDesktop);
+    } else if (desktopNav.addListener) {
+      desktopNav.addListener(closeOnDesktop);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
      Intro
      ------------------------------------------------------------------------ */
   function startIntro() {
@@ -97,9 +216,16 @@
     const originals = Array.prototype.slice.call(track.children);
     if (!originals.length) return;
 
-    const gap = parseFloat(window.getComputedStyle(track).columnGap) || 16;
-    const cardWidth = originals[0].getBoundingClientRect().width || 438;
-    const unit = originals.length * (cardWidth + gap);
+    let gap = parseFloat(window.getComputedStyle(track).columnGap) || 16;
+    let unit = originals.length * (originals[0].getBoundingClientRect().width + gap);
+
+    function measureRow() {
+      gap = parseFloat(window.getComputedStyle(track).columnGap) || 16;
+      const cardWidth = originals[0].getBoundingClientRect().width || 438;
+      unit = Math.max(1, originals.length * (cardWidth + gap));
+    }
+
+    measureRow();
 
     // Repeat the set so there is never an empty edge while looping.
     for (let copy = 0; copy < 3; copy += 1) {
@@ -112,6 +238,13 @@
         });
         track.appendChild(clone);
       });
+    }
+
+    if ("ResizeObserver" in window) {
+      const rowObserver = new ResizeObserver(measureRow);
+      rowObserver.observe(originals[0]);
+    } else {
+      window.addEventListener("resize", measureRow, { passive: true });
     }
 
     const direction = row.getAttribute("data-direction") === "right" ? "right" : "left";
@@ -141,36 +274,72 @@
 
   /* ------------------------------------------------------------------------
      Testimonial ticker
+     Desktop keeps the continuous ticker. Touch layouts switch to a native,
+     snap-scrolling rail instead.
      ------------------------------------------------------------------------ */
   const testiTrack = document.getElementById("testiTrack");
 
   if (testiTrack) {
     const originals = Array.prototype.slice.call(testiTrack.children);
+    const desktopTicker = window.matchMedia("(min-width: 1200px)");
+    let tickerFrame = null;
+    let tickerStart = null;
+    let unit = 1;
 
-    for (let copy = 0; copy < 2; copy += 1) {
-      originals.forEach(function (card) {
-        const clone = card.cloneNode(true);
-        clone.setAttribute("aria-hidden", "true");
-        testiTrack.appendChild(clone);
+    function clearTickerClones() {
+      testiTrack.querySelectorAll("[data-ticker-clone]").forEach(function (clone) {
+        clone.remove();
       });
     }
 
-    if (!reducedMotion) {
-      const gap = parseFloat(window.getComputedStyle(testiTrack).columnGap) || 10;
-      const cardWidth = originals[0].getBoundingClientRect().width || 290;
-      const unit = originals.length * (cardWidth + gap);
-      const speed = 101;
-      let start = null;
+    function stopTicker() {
+      if (tickerFrame !== null) {
+        window.cancelAnimationFrame(tickerFrame);
+        tickerFrame = null;
+      }
+      tickerStart = null;
+      testiTrack.style.transform = "";
+    }
 
-      function tickTicker(timestamp) {
-        if (start === null) start = timestamp;
-        const elapsed = (timestamp - start) / 1000;
-        const x = -((elapsed * speed) % unit);
-        testiTrack.style.transform = "translate3d(" + x.toFixed(2) + "px, 0, 0)";
-        window.requestAnimationFrame(tickTicker);
+    function tickTicker(timestamp) {
+      if (tickerStart === null) tickerStart = timestamp;
+      const elapsed = (timestamp - tickerStart) / 1000;
+      const x = -((elapsed * 101) % unit);
+      testiTrack.style.transform = "translate3d(" + x.toFixed(2) + "px, 0, 0)";
+      tickerFrame = window.requestAnimationFrame(tickTicker);
+    }
+
+    function buildTicker() {
+      stopTicker();
+      clearTickerClones();
+
+      // The mobile rail is a horizontal scroll container, so it only needs
+      // the original cards and no cloned duplicates.
+      if (!desktopTicker.matches) return;
+
+      for (let copy = 0; copy < 2; copy += 1) {
+        originals.forEach(function (card) {
+          const clone = card.cloneNode(true);
+          clone.setAttribute("aria-hidden", "true");
+          clone.setAttribute("data-ticker-clone", "true");
+          testiTrack.appendChild(clone);
+        });
       }
 
-      window.requestAnimationFrame(tickTicker);
+      if (reducedMotion) return;
+
+      const gap = parseFloat(window.getComputedStyle(testiTrack).columnGap) || 10;
+      const cardWidth = originals[0].getBoundingClientRect().width || 290;
+      unit = Math.max(1, originals.length * (cardWidth + gap));
+      tickerFrame = window.requestAnimationFrame(tickTicker);
+    }
+
+    buildTicker();
+
+    if (desktopTicker.addEventListener) {
+      desktopTicker.addEventListener("change", buildTicker);
+    } else if (desktopTicker.addListener) {
+      desktopTicker.addListener(buildTicker);
     }
   }
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1200">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="I'm a passionate graphic designer. With over 3 years of experience in the industry, I specialize in crafting engaging thumbnails that not only capture attention but also drive results.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Killer Gfx">
@@ -41,8 +41,30 @@
           </div>
         </div>
         <a class="btn-pink nav-cta" href="contact.html">Contact me</a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
+          <span class="nav-toggle-icon" aria-hidden="true"><i></i><i></i></span>
+        </button>
       </div>
     </nav>
+
+    <div class="mobile-menu" id="mobileMenu" aria-hidden="true" inert data-lenis-prevent>
+      <div class="mobile-menu-inner">
+        <p class="mobile-menu-kicker">Explore</p>
+        <nav class="mobile-menu-links" aria-label="Mobile navigation">
+          <a href="index.html#home"><span>Home</span><span aria-hidden="true">01</span></a>
+          <a href="index.html#portfolio"><span>Works</span><span aria-hidden="true">02</span></a>
+          <a href="index.html#about"><span>About me</span><span aria-hidden="true">03</span></a>
+          <a href="index.html#result-analytics"><span>Analytics</span><span aria-hidden="true">04</span></a>
+          <a href="index.html#testimonials"><span>Reviews</span><span aria-hidden="true">05</span></a>
+          <a href="index.html#faq"><span>FAQ</span><span aria-hidden="true">06</span></a>
+        </nav>
+        <div class="mobile-menu-foot">
+          <p>Have a thumbnail in mind?</p>
+          <a class="btn-pink mobile-menu-cta" href="#contactForm">Send a message</a>
+          <a class="mobile-menu-mail" href="mailto:sameerkumar04300@gmail.com">sameerkumar04300@gmail.com</a>
+        </div>
+      </div>
+    </div>
 
     <main class="contact-main">
       <div class="contact-head">
