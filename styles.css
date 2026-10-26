@@ -1,7 +1,71 @@
 /* ==========================================================================
    Killergfx — pixel-match rebuild
-   Inter (Google Fonts) with a slightly heavier optical weight.
+   Creato Display (SIL OFL) with the existing optical weight scale.
    ========================================================================== */
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 550;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-Bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 650;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-Bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-Bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 750;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-ExtraBold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Creato Display";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("assets/fonts/creato-display/CreatoDisplay-ExtraBold.woff2") format("woff2");
+}
 
 :root {
   --pink: #ff00c6;
@@ -10,7 +74,7 @@
   --ink: #0a0a0a;
   --grey-text: #6d7792;
   --navy: #131839;
-  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font: "Creato Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 *,

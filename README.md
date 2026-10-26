@@ -1,6 +1,6 @@
 # Killer Gfx Thumbnail Portfolio
 
-A static recreation of [killergfx.framer.website](https://killergfx.framer.website/) with Inter typography loaded from Google Fonts and Lenis smooth scrolling.
+A static recreation of [killergfx.framer.website](https://killergfx.framer.website/) with self-hosted Creato Display typography and Lenis smooth scrolling.
 
 **Live site:** <https://portfoliothumbnail.vercel.app/>
 
@@ -32,4 +32,4 @@ The site is plain HTML, CSS and JavaScript and needs no build step.
 - **Vercel:** deployed from the `main` branch at <https://portfoliothumbnail.vercel.app/>. `vercel.json` enables clean URLs and long-lived caching for assets.
 - **GitHub Pages:** publish from the repository root.
 
-All images and video are self-hosted under `assets/`. Inter is loaded from Google Fonts. Lenis 1.3.27 (MIT) is vendored under `assets/vendor/`.
+All images and video are self-hosted under `assets/`. Creato Display is self-hosted under `assets/fonts/creato-display/` under the SIL Open Font License. Lenis 1.3.27 (MIT) is vendored under `assets/vendor/`.
