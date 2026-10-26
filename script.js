@@ -184,6 +184,469 @@
   }
 
   /* ------------------------------------------------------------------------
+     Dynamic Island navigation
+     A small spring simulation drives the island's width and height, so the
+     close has a soft Apple-style overshoot. The same loop keeps the scroll
+     arc and active section in sync with the page.
+     ------------------------------------------------------------------------ */
+  const island = document.querySelector("[data-nav-island]");
+
+  if (island) {
+    const compactButton = island.querySelector(".island-compact");
+    const statusEl = island.querySelector("[data-island-section]");
+    const progressEl = island.querySelector("[data-island-progress]");
+    const progressArc = island.querySelector("[data-island-progress-arc]");
+    const navLinks = Array.prototype.slice.call(
+      island.querySelectorAll(".nav-link")
+    );
+    const desktopNavQuery = window.matchMedia("(min-width: 1200px)");
+
+    const islandSizes = {
+      compact: { width: 232, height: 46 },
+      expanded: { width: 620, height: 67 }
+    };
+    const sectionLabels = {
+      home: "Home",
+      portfolio: "Works",
+      about: "About",
+      "result-analytics": "Analytics",
+      testimonials: "Reviews",
+      faq: "FAQ"
+    };
+    const linkedSections = navLinks
+      .map(function (link) {
+        const href = link.getAttribute("href") || "";
+        const hashIndex = href.indexOf("#");
+        if (hashIndex === -1) return null;
+
+        const id = decodeURIComponent(href.slice(hashIndex + 1));
+        const section = document.getElementById(id);
+        if (!section) return null;
+
+        return { id: id, section: section, link: link };
+      })
+      .filter(Boolean);
+
+    const widthSpring = {
+      value: islandSizes.expanded.width,
+      target: islandSizes.expanded.width,
+      velocity: 0
+    };
+    const heightSpring = {
+      value: islandSizes.expanded.height,
+      target: islandSizes.expanded.height,
+      velocity: 0
+    };
+
+    let islandExpanded = true;
+    let springFrame = 0;
+    let lastSpringTime = 0;
+    let hovering = false;
+    let focused = false;
+    let pinned = false;
+    let complete = false;
+    let activeSection = "";
+    let progressTarget = 0;
+    let progressValue = 0;
+    let progressFrame = 0;
+    let lastProgressAnnouncement = -1;
+    let scrollFrame = 0;
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function writeIslandSize(width, height) {
+      island.style.width = width.toFixed(2) + "px";
+      island.style.height = height.toFixed(2) + "px";
+    }
+
+    function updateCompactA11y() {
+      if (!compactButton) return;
+      const label = statusEl ? statusEl.textContent : "navigation";
+      compactButton.setAttribute(
+        "aria-label",
+        (islandExpanded ? "Close" : "Open") +
+          " navigation. Current section: " +
+          label
+      );
+    }
+
+    function stepSpring(spring, dt, stiffness, damping) {
+      const force =
+        -stiffness * (spring.value - spring.target) -
+        damping * spring.velocity;
+      spring.velocity += force * dt;
+      spring.value += spring.velocity * dt;
+
+      return (
+        Math.abs(spring.velocity) < 0.08 &&
+        Math.abs(spring.value - spring.target) < 0.08
+      );
+    }
+
+    function runSpring(time) {
+      if (!lastSpringTime) lastSpringTime = time;
+      const dt = Math.min((time - lastSpringTime) / 1000, 1 / 30) || 1 / 60;
+      lastSpringTime = time;
+
+      const stiffness = islandExpanded ? 240 : 300;
+      const damping = islandExpanded ? 24 : 18;
+      const widthSettled = stepSpring(widthSpring, dt, stiffness, damping);
+      const heightSettled = stepSpring(heightSpring, dt, stiffness, damping);
+
+      writeIslandSize(widthSpring.value, heightSpring.value);
+
+      if (widthSettled && heightSettled) {
+        writeIslandSize(widthSpring.target, heightSpring.target);
+        springFrame = 0;
+        lastSpringTime = 0;
+      } else {
+        springFrame = requestAnimationFrame(runSpring);
+      }
+    }
+
+    function setIslandExpanded(open, immediate) {
+      if (open === islandExpanded && !immediate) return;
+
+      islandExpanded = open;
+      island.classList.toggle("is-expanded", open);
+      if (compactButton) {
+        compactButton.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      updateCompactA11y();
+
+      const target = open ? islandSizes.expanded : islandSizes.compact;
+
+      if (immediate || reducedMotion || !desktopNavQuery.matches) {
+        widthSpring.value = widthSpring.target = target.width;
+        heightSpring.value = heightSpring.target = target.height;
+        widthSpring.velocity = 0;
+        heightSpring.velocity = 0;
+        writeIslandSize(target.width, target.height);
+
+        if (springFrame) {
+          cancelAnimationFrame(springFrame);
+          springFrame = 0;
+        }
+        lastSpringTime = 0;
+        return;
+      }
+
+      widthSpring.target = target.width;
+      heightSpring.target = target.height;
+
+      if (!springFrame) {
+        lastSpringTime = 0;
+        springFrame = requestAnimationFrame(runSpring);
+      }
+    }
+
+    function maybeCollapseIsland() {
+      if (hovering || focused || pinned || (window.scrollY || 0) < 48) return;
+      setIslandExpanded(false);
+    }
+
+    function updateIslandLabel() {
+      if (!statusEl) return;
+
+      let nextLabel = "Contact";
+      if (linkedSections.length) {
+        nextLabel = complete ? "Complete" : sectionLabels[activeSection] || "Home";
+      }
+
+      if (statusEl.textContent === nextLabel) return;
+
+      statusEl.textContent = nextLabel;
+      statusEl.classList.remove("is-swapping");
+      // Restart the tiny text transition when the section changes.
+      void statusEl.offsetWidth;
+      statusEl.classList.add("is-swapping");
+      updateCompactA11y();
+    }
+
+    function renderProgress() {
+      const percent = progressValue * 100;
+      if (progressArc) {
+        progressArc.style.strokeDashoffset = String(100 - percent);
+      }
+      root.style.setProperty("--scroll-progress", percent.toFixed(2));
+
+      if (progressEl) {
+        const rounded = Math.round(percent);
+        if (rounded !== lastProgressAnnouncement) {
+          lastProgressAnnouncement = rounded;
+          progressEl.setAttribute("aria-valuenow", String(rounded));
+        }
+      }
+
+      const nextComplete = progressTarget >= 0.995;
+      if (nextComplete !== complete) {
+        complete = nextComplete;
+        island.classList.toggle("is-complete", complete);
+        updateIslandLabel();
+      }
+    }
+
+    function runProgress() {
+      const difference = progressTarget - progressValue;
+
+      if (Math.abs(difference) < 0.0005) {
+        progressValue = progressTarget;
+        renderProgress();
+        progressFrame = 0;
+        return;
+      }
+
+      progressValue += difference * 0.17;
+      renderProgress();
+      progressFrame = requestAnimationFrame(runProgress);
+    }
+
+    function readProgress() {
+      const scrollTop = window.scrollY || window.pageYOffset || 0;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const viewport = window.innerHeight;
+      const maxScroll = Math.max(1, scrollHeight - viewport);
+      const atBottom = scrollTop + viewport >= scrollHeight - 2;
+
+      progressTarget = atBottom ? 1 : clamp(scrollTop / maxScroll, 0, 1);
+
+      if (reducedMotion) {
+        progressValue = progressTarget;
+        renderProgress();
+      } else if (!progressFrame) {
+        progressFrame = requestAnimationFrame(runProgress);
+      }
+    }
+
+    function readActiveSection() {
+      if (!linkedSections.length) {
+        updateIslandLabel();
+        return;
+      }
+
+      const scrollTop = window.scrollY || window.pageYOffset || 0;
+      const probe = scrollTop + Math.min(window.innerHeight * 0.32, 320);
+      let current = linkedSections[0];
+
+      linkedSections.forEach(function (item) {
+        const top = item.section.getBoundingClientRect().top + scrollTop;
+        if (top <= probe) current = item;
+      });
+
+      activeSection = current.id;
+
+      linkedSections.forEach(function (item) {
+        const active = item.id === activeSection;
+        item.link.classList.toggle("is-active", active);
+
+        if (active) {
+          item.link.setAttribute("aria-current", "location");
+        } else {
+          item.link.removeAttribute("aria-current");
+        }
+      });
+
+      updateIslandLabel();
+    }
+
+    function updateScrollState() {
+      const scrollTop = window.scrollY || window.pageYOffset || 0;
+
+      if (scrollTop < 48) {
+        setIslandExpanded(true);
+      } else if (!hovering && !focused && !pinned) {
+        setIslandExpanded(false);
+      }
+
+      readProgress();
+      readActiveSection();
+    }
+
+    island.addEventListener("pointerenter", function (event) {
+      if (event.pointerType === "touch") return;
+      hovering = true;
+      setIslandExpanded(true);
+    });
+
+    island.addEventListener("pointerleave", function (event) {
+      if (event.pointerType === "touch") return;
+      hovering = false;
+      pinned = false;
+      maybeCollapseIsland();
+    });
+
+    island.addEventListener("focusin", function (event) {
+      if (event.target === compactButton && !islandExpanded) {
+        focused = true;
+        return;
+      }
+
+      focused = true;
+      setIslandExpanded(true);
+    });
+
+    island.addEventListener("focusout", function (event) {
+      if (island.contains(event.relatedTarget)) return;
+
+      // On touch devices the trigger can lose focus as it fades out. Keep the
+      // pinned open state until the user taps outside or presses Escape.
+      if (event.target === compactButton && islandExpanded && pinned) return;
+
+      focused = false;
+      pinned = false;
+      maybeCollapseIsland();
+    });
+
+    if (compactButton) {
+      compactButton.addEventListener("click", function (event) {
+        pinned = true;
+        setIslandExpanded(true);
+
+        // Keyboard users go straight to the links; pointer users can simply
+        // click whichever link they want. Start from the section in view.
+        if (event.detail === 0 && navLinks.length) {
+          const focusTarget =
+            navLinks.find(function (link) {
+              return link.classList.contains("is-active");
+            }) || navLinks[0];
+
+          window.setTimeout(function () {
+            focusTarget.focus({ preventScroll: true });
+          }, 70);
+        } else if (event.detail > 0) {
+          focused = false;
+          if (document.activeElement === compactButton) compactButton.blur();
+        }
+      });
+    }
+
+    navLinks.forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        if (event.detail === 0) return;
+
+        // A pointer click leaves focus on the link. Blur it so the island can
+        // settle back into its compact state once the pointer leaves.
+        focused = false;
+        pinned = false;
+        if (document.activeElement === link) link.blur();
+        window.setTimeout(maybeCollapseIsland, 120);
+      });
+    });
+
+    document.addEventListener(
+      "pointerdown",
+      function (event) {
+        if (island.contains(event.target)) return;
+
+        pinned = false;
+        focused = false;
+        if (island.contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
+        maybeCollapseIsland();
+      },
+      { passive: true }
+    );
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || !islandExpanded) return;
+      if (!island.contains(document.activeElement) && !pinned) return;
+
+      pinned = false;
+      focused = false;
+      setIslandExpanded(false);
+
+      if (compactButton) {
+        compactButton.focus({ preventScroll: true });
+      }
+    });
+
+    window.addEventListener(
+      "scroll",
+      function () {
+        if (scrollFrame) return;
+        scrollFrame = requestAnimationFrame(function () {
+          scrollFrame = 0;
+          updateScrollState();
+        });
+      },
+      { passive: true }
+    );
+
+    window.addEventListener(
+      "resize",
+      function () {
+        if (desktopNavQuery.matches) {
+          setIslandExpanded(
+            (window.scrollY || 0) < 48 || hovering || focused || pinned,
+            true
+          );
+        }
+
+        readProgress();
+        readActiveSection();
+      },
+      { passive: true }
+    );
+
+    const desktopChange = function () {
+      if (desktopNavQuery.matches) {
+        setIslandExpanded((window.scrollY || 0) < 48, true);
+        updateScrollState();
+      }
+    };
+
+    if (desktopNavQuery.addEventListener) {
+      desktopNavQuery.addEventListener("change", desktopChange);
+    } else if (desktopNavQuery.addListener) {
+      desktopNavQuery.addListener(desktopChange);
+    }
+
+    setIslandExpanded((window.scrollY || 0) < 48, true);
+    updateScrollState();
+    updateIslandLabel();
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(updateScrollState);
+    }
+    window.addEventListener("load", updateScrollState, { once: true });
+  }
+
+  /* ------------------------------------------------------------------------
+     Button ripple
+     ------------------------------------------------------------------------ */
+  const rippleButtons = Array.prototype.slice.call(
+    document.querySelectorAll(".btn-saas")
+  );
+
+  if (!reducedMotion && rippleButtons.length) {
+    rippleButtons.forEach(function (button) {
+      function addRipple() {
+        const ripple = document.createElement("span");
+        ripple.className = "btn-grid-ripple";
+        ripple.setAttribute("aria-hidden", "true");
+        button.appendChild(ripple);
+
+        window.setTimeout(function () {
+          if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+        }, 430);
+      }
+
+      button.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) return;
+        addRipple();
+      });
+
+      button.addEventListener("click", function (event) {
+        // Keyboard activation does not emit a pointer event.
+        if (event.detail === 0) addRipple();
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------------
      Intro
      ------------------------------------------------------------------------ */
   function startIntro() {
@@ -416,10 +879,19 @@
       }
 
       const button = form.querySelector(".contact-submit");
-      const original = button ? button.textContent : "";
+      const label = button ? button.querySelector(".btn-label") : null;
+      const original = label
+        ? label.textContent
+        : button
+          ? button.textContent
+          : "";
 
       if (button) {
-        button.textContent = "Message Sent ✓";
+        if (label) {
+          label.textContent = "Message Sent ✓";
+        } else {
+          button.textContent = "Message Sent ✓";
+        }
         button.disabled = true;
         button.style.opacity = "0.85";
       }
@@ -428,7 +900,11 @@
 
       window.setTimeout(function () {
         if (button) {
-          button.textContent = original;
+          if (label) {
+            label.textContent = original;
+          } else {
+            button.textContent = original;
+          }
           button.disabled = false;
           button.style.opacity = "";
         }
