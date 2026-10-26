@@ -64,5 +64,13 @@
   "icon-attention.png": "assets/img/icon-attention.png",
   "icon-communication.svg": "assets/img/icon-communication.svg"
  },
- "video": "assets/video/about.mp4"
+ "video": "assets/video/about.mp4",
+ "vendor": {
+  "lenis": {
+   "version": "1.3.27",
+   "script": "assets/vendor/lenis.min.js",
+   "style": "assets/vendor/lenis.css",
+   "license": "assets/vendor/LICENSE-lenis"
+  }
+ }
 }

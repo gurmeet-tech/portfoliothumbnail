@@ -9,6 +9,62 @@
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ------------------------------------------------------------------------
+     Smooth scrolling (Lenis)
+     ------------------------------------------------------------------------ */
+  if (!reducedMotion && typeof window.Lenis === "function") {
+    const lenis = new window.Lenis({
+      duration: 1.2,
+      easing: function (t) {
+        return Math.min(1, 1.001 - Math.pow(2, -10 * t));
+      },
+      smoothWheel: true,
+      syncTouch: false,
+      wheelMultiplier: 1,
+      touchMultiplier: 1,
+      anchors: false,
+      autoRaf: false,
+      stopInertiaOnNavigate: true
+    });
+
+    function lenisFrame(time) {
+      lenis.raf(time);
+      window.requestAnimationFrame(lenisFrame);
+    }
+
+    window.requestAnimationFrame(lenisFrame);
+
+    document.addEventListener("click", function (event) {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+
+      const link = event.target.closest('a[href^="#"]');
+      if (!link) return;
+
+      const hash = link.getAttribute("href");
+      if (!hash || hash === "#") return;
+
+      const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+      if (!target) return;
+
+      event.preventDefault();
+      lenis.scrollTo(target, { duration: 1.35 });
+
+      if (window.history && window.history.pushState) {
+        window.history.pushState(null, "", hash);
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------------
      Intro
      ------------------------------------------------------------------------ */
   function startIntro() {

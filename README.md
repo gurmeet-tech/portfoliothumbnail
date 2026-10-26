@@ -1,6 +1,6 @@
 # Killer Gfx Thumbnail Portfolio
 
-A static recreation of [killergfx.framer.website](https://killergfx.framer.website/) with SF Pro typography.
+A static recreation of [killergfx.framer.website](https://killergfx.framer.website/) with Inter typography loaded from Google Fonts and Lenis smooth scrolling.
 
 ## Pages
 
@@ -24,4 +24,4 @@ The site is plain HTML, CSS and JavaScript and needs no build step.
 - **Vercel:** import the repository and deploy the project root. `vercel.json` enables clean URLs and long-lived caching for assets.
 - **GitHub Pages:** publish from the repository root.
 
-All images, videos and SF Pro font files are self-hosted under `assets/`.
+All images and video are self-hosted under `assets/`. Inter is loaded from Google Fonts. Lenis 1.3.27 (MIT) is vendored under `assets/vendor/`.

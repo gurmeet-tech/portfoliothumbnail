@@ -16,8 +16,10 @@
   <title>Killer Gfx</title>
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-  <link rel="preload" href="assets/fonts/SF-Pro-Display-Regular.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/SF-Pro-Display-Bold.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/vendor/lenis.css">
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js');</script>
 </head>
@@ -193,6 +195,7 @@
     </section>
 
     <section class="testimonials" id="testimonials">
+      <div class="testi-design" aria-hidden="true"><img src="assets/img/design.png" alt=""></div>
       <div class="testi-head">
         <div class="pill">Testimonials</div>
         <h2>Client Reveiws</h2>
@@ -546,6 +549,7 @@
     </footer>
   </main>
 
+  <script src="assets/vendor/lenis.min.js" defer></script>
   <script src="script.js" defer></script>
 </body>
 </html>
